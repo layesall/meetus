@@ -1,8 +1,10 @@
 import os
+from zoneinfo import ZoneInfo
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
+from django.utils.timezone import make_aware, is_naive
 
 SCOPES = ['https://www.googleapis.com/auth/calendar.events']
 
@@ -38,16 +40,29 @@ def create_google_meet_event(summary: str, description: str, start_time, end_tim
     """
     service = get_calendar_service()
 
+    brussels_tz = ZoneInfo("Europe/Brussels")
+    
+    # Force la conversion explicite vers le fuseau horaire Europe/Brussels
+    if is_naive(start_time):    
+        start_time = make_aware(start_time, brussels_tz)
+    else:
+        start_time = start_time.astimezone(brussels_tz)
+
+    if is_naive(end_time):
+        end_time = make_aware(end_time, brussels_tz)
+    else:
+        end_time = end_time.astimezone(brussels_tz)
+
     event_body = {
         'summary': summary,
         'description': description,
         'start': {
             'dateTime': start_time.isoformat(),
-            'timeZone': 'UTC',
+            'timeZone': 'Europe/Brussels',
         },
         'end': {
             'dateTime': end_time.isoformat(),
-            'timeZone': 'UTC',
+            'timeZone': 'Europe/Brussels',
         },
         'attendees': [
             {'email': client_email},
