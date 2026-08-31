@@ -32,6 +32,9 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'unfold',
+    'unfold.contrib.filters',
+
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -136,3 +139,29 @@ CORS_ALLOWED_ORIGINS = [
 BREVO_API_KEY = config("BREVO_API_KEY", default="")
 BREVO_SENDER_EMAIL = config("BREVO_SENDER_EMAIL", default="noreply@meetus.com")
 BREVO_SENDER_NAME = config("BREVO_SENDER_NAME", default="MeetUs")
+
+# UNFOLD ADMIN DESIGN CONFIGURATION
+UNFOLD = {
+    "SITE_TITLE": "Meetus Admin",
+    "SITE_HEADER": "MeetUs Dashboard",
+    "SITE_URL": "/",
+    "SITE_ICON": lambda request: None,
+    "SHOW_HISTORY": True,
+    "THEME": "dark",  # 'light', 'dark' ou 'auto'
+    "BORDER_RADIUS": "6px",
+    "COLORS": {
+        "primary": {
+            "50": "239 246 255",
+            "100": "219 234 254",
+            "200": "191 219 254",
+            "300": "147 197 253",
+            "400": "96 165 250",
+            "500": "59 130 246",
+            "600": "37 99 235",
+            "700": "29 78 216",
+            "800": "30 58 138",
+            "900": "23 37 84",
+            "950": "15 23 42",
+        },
+    },
+}
