@@ -19,3 +19,9 @@ staticfiles/
 # Next.js
 web/.next/
 web/node_modules/
+
+# Google OAuth Credentials & Tokens
+credentials.json
+token.json
+core/credentials.json
+core/token.json

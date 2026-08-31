@@ -7,6 +7,7 @@ from ninja.errors import HttpError
 
 from .models import Availability, BlockedDate, Booking, EventType
 from .schemas import BookingOut, DaySlotsOut, EventTypeOut
+from .google_calendar import create_google_meet_event
 
 router = Router(tags=["Bookings"])
 
@@ -141,6 +142,22 @@ def create_booking(
         raise HttpError(400, "This time slot is no longer available.")
 
     # 3. Create the booking record
+    google_event_id = None
+    google_meet_link = None
+
+    if chosen_channel == "google_meet":
+        try:
+            google_event_id, google_meet_link = create_google_meet_event(
+                summary=f"{event_type.title} - {client_name}",
+                description=f"Rendez-vous réservé via MeetUs.\nClient: {client_name}\nEmail: {client_email}",
+                start_time=start_time,
+                end_time=end_time,
+                client_email=client_email,
+            )
+        except Exception as e:
+            # En cas d'erreur API, log la sous-erreur sans bloquer obligatoirement la réservation
+            print(f"Erreur lors de la création Google Meet: {e}")
+
     booking = Booking.objects.create(
         event_type=event_type,
         client_name=client_name,
@@ -149,6 +166,8 @@ def create_booking(
         chosen_channel=chosen_channel,
         start_time=start_time,
         end_time=end_time,
+        google_event_id=google_event_id,
+        google_meet_link=google_meet_link,
         status=Booking.Status.CONFIRMED,
     )
 
