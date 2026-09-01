@@ -1,18 +1,25 @@
-from ninja import NinjaAPI
-from apps.bookings.api import router as bookings_router
+from ninja_extra import NinjaExtraAPI
+from ninja_jwt.controller import NinjaJWTDefaultController
+from apps.bookings.api import public_router, admin_router
 
-api = NinjaAPI(
+# Utilisation de NinjaExtraAPI au lieu de NinjaAPI
+api = NinjaExtraAPI(
     title="Meetus API",
     version="1.0.0",
     description="API for reservation and scheduling of appointments",
 )
 
-# Add the bookings router to the API
-api.add_router("bookings/", bookings_router)
+# Enregistrement officiel du contrôleur JWT
+api.register_controllers(NinjaJWTDefaultController)
+
+# Public endpoints
+api.add_router("/bookings/", public_router)
+
+# Protected admin endpoints
+api.add_router("/admin/bookings/", admin_router)
+
 
 @api.get("/health", tags=["System"])
 def health_check(request):
-    """
-    Health check endpoint to verify that the API is running.
-    """
-    return {"status": "ok", "message": "Meetus APIS is running"}
+    """Vérification de l'état de l'API"""
+    return {"status": "ok", "message": "Meetus API is running"}

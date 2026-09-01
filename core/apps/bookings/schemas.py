@@ -1,8 +1,8 @@
-from datetime import datetime, date, time
-from decimal import Decimal
+from datetime import date, datetime
 from typing import List, Optional
 from uuid import UUID
-from pydantic import BaseModel, EmailStr, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
 
 # --- EventType Schemas ---
 class EventTypeOut(BaseModel):
@@ -16,27 +16,31 @@ class EventTypeOut(BaseModel):
     allowed_channels: List[str]
     color: str
 
-# --- Slots Schemas (Créneaux libres) ---
+
+# --- Slots Schemas ---
 class SlotOut(BaseModel):
     start_time: datetime
     end_time: datetime
+
 
 class DaySlotsOut(BaseModel):
     date: date
     slots: List[SlotOut]
 
-# --- Booking Schemas (Création de RDV) ---
+
+# --- Booking Schemas ---
 class BookingCreateIn(BaseModel):
-    event_type_slug: str
+    event_type_slug: str = Field(..., max_length=100)
     client_name: str = Field(..., min_length=2, max_length=150)
     client_email: EmailStr
-    client_phone: Optional[str] = None
-    chosen_channel: str
+    client_phone: Optional[str] = Field(None, max_length=20)
+    chosen_channel: str = Field(..., max_length=50)
     start_time: datetime
+
 
 class BookingOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    
+
     id: UUID
     client_name: str
     client_email: str
