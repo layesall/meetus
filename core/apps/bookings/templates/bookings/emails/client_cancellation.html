@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #f4f5f7; color: #333; padding: 20px; }
+    .card { background: #ffffff; padding: 30px; border-radius: 8px; max-width: 600px; margin: 0 auto; border-top: 4px solid #ef4444; }
+    .info-box { background-color: #fef2f2; border: 1px solid #fecaca; padding: 15px; border-radius: 6px; margin: 20px 0; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Annulation de votre rendez-vous</h2>
+    <p>Bonjour <strong>{{ client_name }}</strong>,</p>
+    <p>Nous vous confirmons que votre rendez-vous a bien été annulé.</p>
+    
+    <div class="info-box">
+      <p style="margin: 5px 0;"><strong>Prestation :</strong> {{ event_title }}</p>
+      <p style="margin: 5px 0;"><strong>Date initiale :</strong> {{ start_time }}</p>
+    </div>
+
+    <p style="font-size: 14px; color: #666;">
+      L'événement a été retiré des agendas et la plage horaire est à nouveau disponible. N'hésitez pas à réserver un autre créneau si besoin !
+    </p>
+  </div>
+</body>
+</html>

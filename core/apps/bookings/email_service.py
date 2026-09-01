@@ -1,83 +1,100 @@
-from zoneinfo import ZoneInfo
 import sib_api_v3_sdk
 from sib_api_v3_sdk.rest import ApiException
 from django.conf import settings
-from django.utils.timezone import is_naive, make_aware
+from django.template.loader import render_to_string
 
 
-def send_booking_confirmation_email(booking):
-    """Sends a confirmation email to the client using the Brevo transactional email API."""
+def _get_mail_api_instance():
+    """Initialise le client API Brevo Transactional Emails."""
     configuration = sib_api_v3_sdk.Configuration()
     configuration.api_key['api-key'] = settings.BREVO_API_KEY
+    return sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
 
-    api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
 
-    # Conversion de la date UTC stockée en BDD vers la timezone locale (Europe/Brussels)
-    brussels_tz = ZoneInfo("Europe/Brussels")
-    start_dt = booking.start_time
-    
-    if is_naive(start_dt):
-        start_dt = make_aware(start_dt, brussels_tz)
-    else:
-        start_dt = start_dt.astimezone(brussels_tz)
+def send_custom_html_email(to_email: str, to_name: str, subject: str, template_path: str, context: dict) -> bool:
+    """Rend un template HTML local Django et l'envoie via Brevo REST API."""
+    api_instance = _get_mail_api_instance()
 
-    formatted_start = start_dt.strftime("%d/%m/%Y à %H:%M")
-    
-    # Conditional content for Google Meet
-    meet_info = ""
-    if booking.google_meet_link:
-        meet_info = f"""
-        <p><strong>Lien de la visioconférence :</strong><br>
-        <a href="{booking.google_meet_link}" style="color: #2563eb; text-decoration: underline;">
-            Rejoindre la réunion Google Meet
-        </a></p>
-        """
+    # Rendu du template HTML local
+    html_content = render_to_string(template_path, context)
 
-    # Email HTML body
-    html_content = f"""
-    <html>
-      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333333;">
-        <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
-          <h2 style="color: #2563eb;">Réservation confirmée !</h2>
-          <p>Bonjour <strong>{booking.client_name}</strong>,</p>
-          <p>Votre rendez-vous a bien été confirmé. Voici les détails :</p>
-          
-          <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-            <tr>
-              <td style="padding: 8px 0; font-weight: bold;">Service :</td>
-              <td style="padding: 8px 0;">{booking.event_type.title}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px 0; font-weight: bold;">Date & Heure :</td>
-              <td style="padding: 8px 0;">{formatted_start}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px 0; font-weight: bold;">Canal choisi :</td>
-              <td style="padding: 8px 0;">{booking.chosen_channel}</td>
-            </tr>
-          </table>
-
-          {meet_info}
-
-          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
-          <p style="font-size: 12px; color: #6b7280;">
-            Si vous souhaitez annuler ou modifier ce rendez-vous, veuillez contacter directement l'organisateur.
-          </p>
-        </div>
-      </body>
-    </html>
-    """
-
+    # Payload d'envoi SMTP Brevo avec l'expéditeur configuré dans settings
     send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
-        to=[{"email": booking.client_email, "name": booking.client_name}],
-        sender={"name": settings.BREVO_SENDER_NAME, "email": settings.BREVO_SENDER_EMAIL},
-        subject=f"Confirmation : {booking.event_type.title} avec MeetUs",
+        sender={
+            "name": getattr(settings, "BREVO_SENDER_NAME", "MeetUs"),
+            "email": getattr(settings, "BREVO_SENDER_EMAIL", "ulayesall@gmail.com"),
+        },
+        to=[{"email": to_email, "name": to_name}],
+        subject=subject,
         html_content=html_content,
     )
 
     try:
-        api_response = api_instance.send_transac_email(send_smtp_email)
-        return api_response
+        api_instance.send_transac_email(send_smtp_email)
+        return True
     except ApiException as e:
-        print(f"Exception during Brevo email sending: {e}")
-        return None
+        print(f"[Brevo Error] Échec d'envoi à {to_email} : {e}")
+        return False
+
+
+def send_booking_confirmation_emails(booking):
+    """Envoie les confirmations (Client + Admin) avec templates HTML locaux."""
+    formatted_date = booking.start_time.strftime("%d/%m/%Y à %H:%M")
+    cancel_url = booking.get_cancel_url()
+
+    context = {
+        "client_name": booking.client_name,
+        "client_email": booking.client_email,
+        "event_title": booking.event_type.title,
+        "start_time": formatted_date,
+        "meet_link": booking.google_meet_link or "",
+        "cancel_url": cancel_url,
+    }
+
+    # 1. Email au Client
+    send_custom_html_email(
+        to_email=booking.client_email,
+        to_name=booking.client_name,
+        subject=f"Confirmation : {booking.event_type.title}",
+        template_path="bookings/emails/client_confirmation.html",
+        context=context,
+    )
+
+    # 2. Email à l'Admin
+    send_custom_html_email(
+        to_email=settings.ADMIN_NOTIFICATION_EMAIL,
+        to_name="Admin MeetUs",
+        subject=f"Nouveau RDV : {booking.client_name}",
+        template_path="bookings/emails/admin_confirmation.html",
+        context=context,
+    )
+
+
+def send_booking_cancellation_emails(booking):
+    """Envoie les annulations (Client + Admin) avec templates HTML locaux."""
+    formatted_date = booking.start_time.strftime("%d/%m/%Y à %H:%M")
+
+    context = {
+        "client_name": booking.client_name,
+        "client_email": booking.client_email,
+        "event_title": booking.event_type.title,
+        "start_time": formatted_date,
+    }
+
+    # 1. Confirmation d'annulation au Client
+    send_custom_html_email(
+        to_email=booking.client_email,
+        to_name=booking.client_name,
+        subject=f"Annulation confirmée : {booking.event_type.title}",
+        template_path="bookings/emails/client_cancellation.html",
+        context=context,
+    )
+
+    # 2. Notification d'annulation à l'Admin
+    send_custom_html_email(
+        to_email=settings.ADMIN_NOTIFICATION_EMAIL,
+        to_name="Admin MeetUs",
+        subject=f"RDV Annulé : {booking.client_name}",
+        template_path="bookings/emails/admin_cancellation.html",
+        context=context,
+    )

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #f4f5f7; color: #333; padding: 20px; }
+    .card { background: #ffffff; padding: 30px; border-radius: 8px; max-width: 600px; margin: 0 auto; }
+    .btn { display: inline-block; padding: 12px 20px; background-color: #ef4444; color: #ffffff !important; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 15px; }
+    .meet-btn { display: inline-block; padding: 12px 20px; background-color: #2563eb; color: #ffffff !important; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 15px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Confirmation de votre rendez-vous</h2>
+    <p>Bonjour <strong>{{ client_name }}</strong>,</p>
+    <p>Votre réservation pour <strong>{{ event_title }}</strong> est bien confirmée.</p>
+    
+    <ul>
+      <li><strong>Date & Heure :</strong> {{ start_time }}</li>
+    </ul>
+
+    {% if meet_link %}
+      <p><a href="{{ meet_link }}" class="meet-btn">Rejoindre la réunion Google Meet</a></p>
+    {% endif %}
+
+    <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+
+    <p style="font-size: 13px; color: #666;">
+      Un réempêchement ? Vous pouvez annuler votre créneau en cliquant ci-dessous :
+    </p>
+    <p><a href="{{ cancel_url }}" class="btn">Annuler le rendez-vous</a></p>
+  </div>
+</body>
+</html>

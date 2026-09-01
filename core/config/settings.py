@@ -135,10 +135,19 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
 ]
 
-# BREVO CONFIGURATION
-BREVO_API_KEY = config("BREVO_API_KEY", default="")
-BREVO_SENDER_EMAIL = config("BREVO_SENDER_EMAIL", default="noreply@meetus.com")
+# MEETUS_URL configuration
+MEETUS_URL = config("MEETUS_URL", default="http://127.0.0.1:8000")
+
+# -----------------------------------------------------------------------------
+# Brevo & Email Configuration
+# -----------------------------------------------------------------------------
+BREVO_API_KEY = config("BREVO_API_KEY")
+BREVO_SENDER_EMAIL = config("BREVO_SENDER_EMAIL", default="ulayesall@gmail.com")
 BREVO_SENDER_NAME = config("BREVO_SENDER_NAME", default="MeetUs")
+ADMIN_NOTIFICATION_EMAIL = config("ADMIN_NOTIFICATION_EMAIL", default="ulayesall@gmail.com")
+
+# Configuration standard Django pour l'expéditeur par défaut
+DEFAULT_FROM_EMAIL = BREVO_SENDER_EMAIL
 
 # UNFOLD ADMIN DESIGN CONFIGURATION
 UNFOLD = {

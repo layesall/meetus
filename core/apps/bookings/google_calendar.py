@@ -85,3 +85,20 @@ def create_google_meet_event(summary: str, description: str, start_time, end_tim
     google_meet_link = event.get('hangoutLink')
 
     return google_event_id, google_meet_link
+
+def delete_google_calendar_event(google_event_id: str) -> bool:
+    """Supprime un événement de Google Calendar via son ID."""
+    if not google_event_id:
+        return False
+
+    try:
+        service = get_calendar_service()
+        service.events().delete(
+            calendarId="primary",
+            eventId=google_event_id,
+            sendUpdates="all",  # Notifie aussi les participants via Google
+        ).execute()
+        return True
+    except Exception as e:
+        print(f"Erreur lors de la suppression Google Calendar ({google_event_id}): {e}")
+        return False

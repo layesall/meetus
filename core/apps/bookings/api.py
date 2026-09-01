@@ -8,7 +8,7 @@ from ninja.errors import HttpError
 from .models import Availability, BlockedDate, Booking, EventType
 from .schemas import BookingOut, DaySlotsOut, EventTypeOut
 from .google_calendar import create_google_meet_event
-from .email_service import send_booking_confirmation_email
+from .email_service import send_booking_confirmation_emails
 
 router = Router(tags=["Bookings"])
 
@@ -174,7 +174,7 @@ def create_booking(
 
     # 4. Send confirmation email via Brevo
     try:
-        send_booking_confirmation_email(booking)
+        send_booking_confirmation_emails(booking)
     except Exception as e:
         print(f"Erreur lors de l'envoi de l'email Brevo: {e}")
 

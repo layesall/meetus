@@ -1,8 +1,12 @@
 import uuid
+from django.conf import settings
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.core.signing import Signer, BadSignature
+from django.urls import reverse
 
 User = get_user_model()
+signer = Signer()
 
 class EventType(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -63,6 +67,28 @@ class Booking(models.Model):
 
     def __str__(self):
         return f"{self.client_name} - {self.event_type.title}"
+
+    def get_cancel_token(self):
+        """Generate a new cancel token for the booking."""
+        return signer.sign(str(self.pk))
+
+    def get_cancel_url(self, request=None):
+        """Returns the URL for cancelling the booking using the cancel token."""
+        token = self.get_cancel_token()
+        relative_url = reverse("booking_cancel", kwargs={"token": token})
+        if request:
+            return request.build_absolute_uri(relative_url)
+        base_url = getattr(settings, "MEETUS_URL", "http://127.0.0.1:8000").rstrip("/")
+        return f"{base_url}{relative_url}"
+
+    @staticmethod
+    def get_booking_from_token(token):
+        """Retrieve a booking instance from a cancel token."""
+        try:
+            booking_id = signer.unsign(token)
+            return Booking.objects.get(pk=booking_id)
+        except (BadSignature, Booking.DoesNotExist):
+            return None
 
 
 class BlockedDate(models.Model):

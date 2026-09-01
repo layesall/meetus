@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #f4f5f7; color: #333; padding: 20px; }
+    .card { background: #ffffff; padding: 30px; border-radius: 8px; max-width: 600px; margin: 0 auto; border-top: 4px solid #f59e0b; }
+    .info-box { background-color: #fffbeb; border: 1px solid #fde68a; padding: 15px; border-radius: 6px; margin: 20px 0; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Rendez-vous annulé</h2>
+    <p>Le client <strong>{{ client_name }}</strong> a annulé son rendez-vous.</p>
+    
+    <div class="info-box">
+      <p style="margin: 5px 0;"><strong>Client :</strong> {{ client_name }} ({{ client_email }})</p>
+      <p style="margin: 5px 0;"><strong>Prestation :</strong> {{ event_title }}</p>
+      <p style="margin: 5px 0;"><strong>Créneau libéré :</strong> {{ start_time }}</p>
+    </div>
+
+    <p style="font-size: 14px; color: #666;">
+      L'événement Google Calendar associé a été automatiquement supprimé et le créneau est libéré dans l'application.
+    </p>
+  </div>
+</body>
+</html>
