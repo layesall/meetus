@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     "ninja_jwt",
     "corsheaders",
     "apps.bookings",
+    "apps.notifications",
 ]
 
 MIDDLEWARE = [
@@ -48,9 +49,7 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [
-            BASE_DIR / 'core' / 'apps' / 'bookings' / 'templates',
-        ],
+        "DIRS": [],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -125,14 +124,16 @@ MEETUS_WEB_URL = config("MEETUS_WEB_URL", default="http://localhost:3000")
 MEETUS_MEET_ACCESS_BEFORE_MINUTES = config("MEETUS_MEET_ACCESS_BEFORE_MINUTES", default=10, cast=int)
 MEETUS_CANCELLATION_DEADLINE_HOURS = config("MEETUS_CANCELLATION_DEADLINE_HOURS", default=24, cast=int)
 
-# Brevo & Email Configuration
-BREVO_API_KEY = config("BREVO_API_KEY")
-BREVO_SENDER_EMAIL = config("BREVO_SENDER_EMAIL")
+# Email Provider Configuration ('brevo' ou 'smtp')
+MEETUS_EMAIL_PROVIDER = config("MEETUS_EMAIL_PROVIDER", default="brevo")
+MEETUS_ADMIN_EMAIL = config("ADMIN_NOTIFICATION_EMAIL", default="admin@meetus.com")
+
+# Brevo Configuration
+BREVO_API_KEY = config("BREVO_API_KEY", default="")
+BREVO_SENDER_EMAIL = config("BREVO_SENDER_EMAIL", default="noreply@meetus.com")
 BREVO_SENDER_NAME = config("BREVO_SENDER_NAME", default="MeetUs")
-ADMIN_NOTIFICATION_EMAIL = config("ADMIN_NOTIFICATION_EMAIL")
 
 DEFAULT_FROM_EMAIL = BREVO_SENDER_EMAIL
-
 # UNFOLD ADMIN DESIGN CONFIGURATION
 UNFOLD = {
     "SITE_TITLE": "Meetus Admin",

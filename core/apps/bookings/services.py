@@ -1,3 +1,5 @@
+# apps/bookings/services.py
+
 import logging
 from datetime import date, datetime, timedelta
 from typing import Dict, List, Optional, Tuple
@@ -8,14 +10,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from ninja.errors import HttpError
 
-from .email_service import (
-    send_booking_cancellation_emails,
-    send_booking_confirmation_emails,
-)
-from .google_calendar import (
-    create_google_meet_event,
-    delete_google_calendar_event,
-)
+from apps.notifications.services import NotificationService
 from .models import AvailabilityRule, BlockedDate, Booking, EventType
 from .schemas import BookingCreateIn
 
@@ -92,8 +87,9 @@ def get_available_slots_service(event_type_slug: str, target_date: date) -> Dict
 def create_booking_service(payload: BookingCreateIn) -> Booking:
     """
     Service de création atomique d'un rendez-vous avec toutes les validations métier,
-    intégration Google Calendar et envoi d'e-mails.
+    intégration Google Calendar et envoi d'e-mails via NotificationService.
     """
+    notification_service = NotificationService()
     event_type = get_object_or_404(EventType, slug=payload.event_type_slug, is_active=True)
 
     start_time = payload.start_time
@@ -147,26 +143,8 @@ def create_booking_service(payload: BookingCreateIn) -> Booking:
         if conflict:
             raise HttpError(409, "This time slot is no longer available.")
 
-        google_event_id = None
-        google_meet_link = None
-
-        if payload.chosen_channel == "google_meet":
-            try:
-                google_event_id, google_meet_link = create_google_meet_event(
-                    summary=f"{event_type.title} - {payload.client_name}",
-                    description=(
-                        f"Rendez-vous réservé via Meetus.\n"
-                        f"Client: {payload.client_name}\n"
-                        f"Email: {payload.client_email}"
-                    ),
-                    start_time=start_time,
-                    end_time=end_time,
-                    client_email=payload.client_email,
-                )
-            except Exception as e:
-                logger.error(f"Google Calendar event creation failed: {e}")
-
-        booking = Booking.objects.create(
+        # Création temporaire de l'objet Booking en mémoire pour construire le contexte
+        booking = Booking(
             event_type=event_type,
             client_name=payload.client_name,
             client_email=payload.client_email,
@@ -174,16 +152,27 @@ def create_booking_service(payload: BookingCreateIn) -> Booking:
             chosen_channel=payload.chosen_channel,
             start_time=start_time,
             end_time=end_time,
-            google_event_id=google_event_id,
-            google_meet_link=google_meet_link,
             status=Booking.Status.CONFIRMED,
         )
 
+        google_event_id = None
+        google_meet_link = None
+
+        if payload.chosen_channel == "google_meet":
+            try:
+                google_event_id, google_meet_link = notification_service.create_calendar_event(booking)
+            except Exception as e:
+                logger.error(f"Google Calendar event creation failed: {e}")
+
+        booking.google_event_id = google_event_id
+        booking.google_meet_link = google_meet_link
+        booking.save()
+
     # Notifications e-mail post-création
     try:
-        send_booking_confirmation_emails(booking)
+        notification_service.send_booking_confirmation(booking)
     except Exception as e:
-        logger.error(f"Brevo email dispatch failed: {e}")
+        logger.error(f"Booking confirmation email dispatch failed: {e}")
 
     return booking
 
@@ -192,6 +181,7 @@ def cancel_booking_service(cancel_token: str) -> Booking:
     """
     Service d'annulation d'un rendez-vous via son token unique.
     """
+    notification_service = NotificationService()
     booking = Booking.objects.filter(cancel_token=cancel_token).first()
 
     if not booking:
@@ -203,10 +193,10 @@ def cancel_booking_service(cancel_token: str) -> Booking:
     if not booking.is_cancellation_allowed:
         raise HttpError(400, "The cancellation window for this booking has expired.")
 
-    # Nettoyage Google Calendar si présent
+    # Nettoyage Google Calendar si présent via NotificationService
     if booking.google_event_id:
         try:
-            delete_google_calendar_event(booking.google_event_id)
+            notification_service.delete_calendar_event(booking.google_event_id)
         except Exception as e:
             logger.error(f"Failed to delete Google Calendar event: {e}")
 
@@ -218,7 +208,7 @@ def cancel_booking_service(cancel_token: str) -> Booking:
 
     # Emails d'annulation
     try:
-        send_booking_cancellation_emails(booking)
+        notification_service.send_booking_cancellation(booking)
     except Exception as e:
         logger.error(f"Failed to send cancellation emails: {e}")
 

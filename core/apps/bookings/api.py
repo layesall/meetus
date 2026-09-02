@@ -85,11 +85,7 @@ def cancel_booking_endpoint(request, payload: BookingCancelIn):
 def get_meet_access(request, booking_id: UUID):
     """Headless access check for Google Meet link."""
     status_code, response_payload = get_meet_access_service(booking_id)
-
-    if status_code != 200:
-        raise HttpError(status_code, response_payload)
-
-    return 200, response_payload
+    return status_code, response_payload
 
 
 # --- PROTECTED ADMIN ENDPOINTS ---
