@@ -13,6 +13,7 @@ class EventTypeOut(BaseModel):
     slug: str
     description: Optional[str] = None
     duration_minutes: int
+    buffer_time_minutes: int
     allowed_channels: List[str]
     color: str
 
@@ -49,3 +50,31 @@ class BookingOut(BaseModel):
     end_time: datetime
     google_meet_link: Optional[str] = None
     status: str
+    cancel_token: UUID
+
+
+# --- Meet Access Schemas (Headless) ---
+class MeetAccessOut(BaseModel):
+    code: str
+    message: Optional[str] = None
+    meet_url: Optional[str] = None
+    available_at: Optional[datetime] = None
+    expires_at: Optional[datetime] = None
+
+
+# --- Cancellation Schemas (Headless) ---
+class BookingCancelIn(BaseModel):
+    cancel_token: UUID
+
+
+class BookingCancelOut(BaseModel):
+    success: bool
+    message: str
+    cancelled_at: datetime
+
+
+# --- Standard Error Response Schema ---
+class ErrorResponse(BaseModel):
+    code: str
+    message: str
+    details: Optional[dict] = None

@@ -48,7 +48,9 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [
+            BASE_DIR / 'core' / 'apps' / 'bookings' / 'templates',
+        ],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -116,7 +118,12 @@ if not DEBUG:
     SECURE_HSTS_PRELOAD = True
 
 # Application URLs
-MEETUS_URL = config("MEETUS_URL", default="http://127.0.0.1:8000")
+MEETUS_API_URL = config("MEETUS_API_URL", default="http://127.0.0.1:8000")
+MEETUS_WEB_URL = config("MEETUS_WEB_URL", default="http://localhost:3000")
+
+# Booking & Business Rules Configuration
+MEETUS_MEET_ACCESS_BEFORE_MINUTES = config("MEETUS_MEET_ACCESS_BEFORE_MINUTES", default=10, cast=int)
+MEETUS_CANCELLATION_DEADLINE_HOURS = config("MEETUS_CANCELLATION_DEADLINE_HOURS", default=24, cast=int)
 
 # Brevo & Email Configuration
 BREVO_API_KEY = config("BREVO_API_KEY")

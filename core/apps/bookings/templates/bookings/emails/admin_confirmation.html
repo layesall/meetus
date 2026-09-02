@@ -1,28 +1,34 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <style>
-    body { font-family: Arial, sans-serif; background-color: #f4f5f7; color: #333; padding: 20px; }
-    .card { background: #ffffff; padding: 30px; border-radius: 8px; max-width: 600px; margin: 0 auto; border-top: 4px solid #2563eb; }
-    .info-box { background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 6px; margin: 20px 0; }
-    .meet-btn { display: inline-block; padding: 12px 20px; background-color: #2563eb; color: #ffffff !important; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 10px; }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <h2>Nouveau rendez-vous réservé !</h2>
-    <p>Un nouveau rendez-vous a été confirmé sur <strong>MeetUs</strong>.</p>
-    
-    <div class="info-box">
-      <p style="margin: 5px 0;"><strong>Client :</strong> {{ client_name }} ({{ client_email }})</p>
-      <p style="margin: 5px 0;"><strong>Prestation :</strong> {{ event_title }}</p>
-      <p style="margin: 5px 0;"><strong>Date & Heure :</strong> {{ start_time }}</p>
-    </div>
+{% extends "bookings/emails/base_email.html" %}
 
-    {% if meet_link %}
-      <p><a href="{{ meet_link }}" class="meet-btn">Rejoindre la visio Google Meet</a></p>
-    {% endif %}
-  </div>
-</body>
-</html>
+{% block title %}Nouveau rendez-vous - Meetus{% endblock %}
+{% block header_tag %}Nouvelle Réservation{% endblock %}
+
+{% block content %}
+<h1 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 700; color: #001c40;">Nouveau rendez-vous réservé</h1>
+
+<p style="margin: 0 0 20px 0; font-size: 15px; line-height: 1.5; color: #334155;">
+  Un client vient de réserver un créneau sur votre plateforme <strong>Meetus</strong>.
+</p>
+
+<table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 24px;">
+  <tr>
+    <td style="padding: 20px;">
+      <p style="margin: 0 0 8px 0; font-size: 14px; color: #334155;"><strong>Client :</strong> {{ client_name }} ({{ client_email }})</p>
+      <p style="margin: 0 0 8px 0; font-size: 14px; color: #334155;"><strong>Prestation :</strong> {{ event_title }}</p>
+      <p style="margin: 0; font-size: 14px; color: #334155;"><strong>Date & Heure :</strong> {{ start_time }}</p>
+    </td>
+  </tr>
+</table>
+
+{% if meet_link %}
+<table role="presentation" border="0" cellspacing="0" cellpadding="0">
+  <tr>
+    <td align="center" style="border-radius: 6px; background-color: #2563eb;">
+      <a href="{{ meet_link }}" target="_blank" style="font-size: 14px; font-weight: 600; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; display: inline-block;">
+        Ouvrir Google Meet
+      </a>
+    </td>
+  </tr>
+</table>
+{% endif %}
+{% endblock %}
