@@ -11,6 +11,7 @@ export interface EventType {
   buffer_time_minutes: number;
   allowed_channels: string[];
   is_active: boolean;
+  color?: string;
 }
 
 export interface TimeSlot {
