@@ -1,5 +1,8 @@
+// app/page.tsx
+// Home page – fetches event types and renders the booking flow.
+
 import { fetchEventTypes, EventType } from "@/lib/api";
-import BookingDashboard from "@/components/BookingDashboard";
+import { BookingFlow } from "@/components/BookingFlow";
 
 export default async function HomePage() {
   let eventTypes: EventType[] = [];
@@ -9,6 +12,5 @@ export default async function HomePage() {
     console.error("Erreur chargement prestations:", error);
   }
 
-
-  return <BookingDashboard eventTypes={eventTypes} />;
+  return <BookingFlow eventTypes={eventTypes} />;
 }

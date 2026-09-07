@@ -1,51 +1,49 @@
 "use client";
 
-import { ShieldCheck, Sparkles } from "lucide-react";
+import { ShieldCheck, CalendarDays } from "lucide-react";
 import Image from "next/image";
 
 export function BookingSidebar() {
-    // Informations de démonstration pour le Host (Sidebar par défaut)
-    const hostInfo = {
-      name: "Layesall",
-      role: "Web products. SaaS. Shopify",
-      avatarUrl: "https://layesall.com/images/meprofile.png",
-      bio: "Réservez un créneau directement dans mon agenda pour échanger sur vos projets web, audit UX ou accompagnement technique.",
-      websiteUrl: "https://layesall.com",
-      hostNameLabel: "Waabily",
-    };
+  const host = {
+    name: "Layesall",
+    role: "Fullstack Developer & Product Builder",
+    avatarUrl: "https://layesall.com/images/meprofile.png",
+    bio: "Débloquez le potentiel de votre projet web. Réservez un échange de 20 min pour un audit UX, un SaaS sur mesure ou un accompagnement technique.",
+  };
+
   return (
-    <aside className="w-full lg:w-80 shrink-0 bg-neutral-900/40 border-b lg:border-b-0 lg:border-r border-neutral-800 p-6 lg:p-8 flex flex-col justify-between">
-            <div className="space-y-6">
-              <div className="flex items-center gap-4">
-                <div className="relative w-14 h-14 rounded-full overflow-hidden border-2 border-neutral-700/80 bg-neutral-800">
-                  <Image
-                    src={hostInfo.avatarUrl}
-                    alt={hostInfo.name}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                <div>
-                  <h2 className="font-bold text-base text-white">{hostInfo.name}</h2>
-                  <p className="text-xs text-neutral-400 font-medium">{hostInfo.role}</p>
-                </div>
-              </div>
+    <aside className="w-full h-full flex flex-col justify-between items-start rounded-2xl p-6 shadow-sm backdrop-blur-sm">
+      <div className="w-full">
+        <div className="flex items-center gap-4">
+          <div className="relative w-14 h-14 rounded-full overflow-hidden border-2 border-neutral-700/50 shadow-md shrink-0">
+            <Image
+              src={host.avatarUrl}
+              alt={host.name}
+              fill
+              className="object-cover"
+            />
+          </div>
+          <div>
+            <p className="font-semibold text-lg text-white">{host.name}</p>
+            <p className="text-sm text-neutral-400">{host.role}</p>
+          </div>
+        </div>
 
-              <div className="space-y-3 pt-4 border-t border-neutral-800/80">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                  À propos
-                </span>
-                <p className="text-xs text-neutral-300 leading-relaxed">
-                  {hostInfo.bio}
-                </p>
-              </div>
-            </div>
+        <div className="w-full mt-4 pt-4 border-t border-neutral-800/60">
+          <p className="text-sm text-neutral-300 leading-relaxed">{host.bio}</p>
+        </div>
+      </div>
 
-            <div className="pt-6 mt-6 border-t border-neutral-800/80 text-[11px] text-neutral-500 flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-neutral-400 shrink-0" />
-              <span>Réservation sécurisée & instantanée</span>
-            </div>
-          </aside>
+      <div className="mt-6 flex items-center gap-4 text-xs text-neutral-500">
+        <span className="flex items-center gap-1.5">
+          <CalendarDays className="w-3.5 h-3.5" />
+          Disponible
+        </span>
+        <span className="flex items-center gap-1.5">
+          <ShieldCheck className="w-3.5 h-3.5" />
+          Sécurisé
+        </span>
+      </div>
+    </aside>
   );
 }

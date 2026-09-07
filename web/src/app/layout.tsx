@@ -17,16 +17,17 @@ export default function RootLayout({
     <html lang="fr" className="dark h-full">
       <body className="bg-neutral-950 text-neutral-100 min-h-dvh antialiased flex flex-col justify-between overflow-x-hidden">
 
-              {/* HEADER */}
+        {/* HEADER */}
         <header className="w-full border-b border-neutral-800/80 bg-neutral-950/80 backdrop-blur-md sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-neutral-950 font-black text-lg tracking-tighter">
-              M
-            </div>
-            <span className="font-bold text-lg tracking-tight text-white">
-              Meetus
-            </span>
-          </div>
+          
+          {/* Logo cliquable */}
+          <Link 
+            href="/" 
+            className="group flex items-center gap-0.5 font-black text-2xl tracking-tight transition hover:opacity-90"
+          >
+            <span className="text-white">Meet</span>
+            <span className="text-[#3B82F6]">us</span>
+          </Link>
 
           <Link
             href="https://layesall.com"
@@ -38,6 +39,7 @@ export default function RootLayout({
             <ExternalLink className="w-3.5 h-3.5" />
           </Link>
         </header>
+
         <main className="w-full flex-1 flex flex-col">
           {children}
         </main>
