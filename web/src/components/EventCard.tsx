@@ -1,10 +1,9 @@
 // components/EventCard.tsx
-// Carte agrandie, avec plus d'espace.
 
 "use client";
 
 import { EventType } from "@/lib/api";
-import { Clock, Video, CheckCircle2 } from "lucide-react";
+import { Clock, Video, CheckCircle2, Sparkles } from "lucide-react";
 
 interface EventCardProps {
   event: EventType;
@@ -14,51 +13,66 @@ interface EventCardProps {
 
 export function EventCard({ event, isSelected, onSelect }: EventCardProps) {
   const accentColor = event.color || "#3B82F6";
-  const lines = event.description ? event.description.split("\n") : [];
-  const bulletPoints = lines.filter((l) => l.trim().startsWith("•"));
-  const headerText = lines
-    .filter((l) => !l.trim().startsWith("•") && l.trim() !== "")
-    .join(" ");
+  const formattedPrice = event.price === 0 ? "Gratuit" : `${event.price} ${event.currency}`;
 
   return (
     <div
       onClick={() => onSelect(event)}
-      className={`p-6 rounded-2xl border transition cursor-pointer ${
+      className={`p-6 rounded-2xl border transition cursor-pointer flex flex-col justify-between w-full ${
         isSelected
           ? "bg-neutral-900/60 border-neutral-500 shadow-xl shadow-black/40"
           : "bg-neutral-900/30 border-neutral-800/60 hover:border-neutral-600 hover:bg-neutral-900/50"
       }`}
     >
-      <div className="flex items-start justify-between">
-        <h3 className="text-xl font-semibold text-white">{event.title}</h3>
-        {isSelected && (
-          <CheckCircle2 className="w-6 h-6 shrink-0" style={{ color: accentColor }} />
+      <div>
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="text-2xl font-semibold text-white">{event.title}</h3>
+        </div>
+
+        {event.description && (
+          <p className="text-base text-neutral-300 mt-3 whitespace-pre-line">
+            {event.description}
+          </p>
+        )}
+
+        {event.included_features && event.included_features.length > 0 && (
+          <div className="mt-4 space-y-2">
+            <span className="text-xs uppercase tracking-wider text-neutral-500 font-semibold flex items-center gap-1">
+              <Sparkles className="w-3.5 h-3.5" /> Inclus :
+            </span>
+            <ul className="space-y-1.5 text-xs text-neutral-400">
+              {event.included_features.map((feature, idx) => (
+                <li key={idx} className="flex items-start gap-2">
+                  <span style={{ color: accentColor }}>✓</span>
+                  <span>{feature}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
       </div>
 
-      {headerText && (
-        <p className="text-base text-neutral-300 mt-3">{headerText}</p>
-      )}
-
-      {bulletPoints.length > 0 && (
-        <ul className="mt-3 space-y-1 text-sm text-neutral-400">
-          {bulletPoints.map((pt, idx) => (
-            <li key={idx} className="flex items-start gap-2">
-              <span className="text-neutral-500">•</span>
-              <span>{pt.replace("•", "").trim()}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <div className="flex items-center gap-4 mt-4 pt-4 border-t border-neutral-800/50 text-sm text-neutral-500">
-        <span className="flex items-center gap-2">
-          <Clock className="w-4 h-4" /> {event.duration_minutes} min
-        </span>
-        <span className="flex items-center gap-2">
-          <Video className="w-4 h-4" />{" "}
-          {event.allowed_channels.join(", ").replace(/_/g, " ")}
-        </span>
+      <div className="flex justify-between gap-4 mt-6 pt-4 border-t border-neutral-800/50 text-sm text-neutral-500">
+        <div>
+          <span className="flex items-center gap-2">
+            <Clock className="w-4 h-4" /> {event.duration_minutes} min
+          </span>
+          <span className="flex items-center gap-2 capitalize">
+            <Video className="w-4 h-4" />{" "}
+            {event.allowed_channels.join(", ").replace(/_/g, " ")}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+            <span
+              className="text-sm font-bold px-3 py-1 rounded bg-neutral-800 border border-neutral-700"
+              style={{ color: accentColor }}
+            >
+              {formattedPrice}
+            </span>
+            {isSelected && (
+              <CheckCircle2 className="w-6 h-6 shrink-0" style={{ color: accentColor }} />
+            )}
+          </div>
       </div>
     </div>
   );
