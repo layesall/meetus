@@ -14,11 +14,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="fr" className="dark h-full">
-      <body className="bg-neutral-950 text-neutral-100 min-h-dvh antialiased flex flex-col justify-between overflow-x-hidden">
+    <html lang="fr" className="light h-full">
+      <body className="bg-white text-neutral-100 min-h-dvh antialiased flex flex-col justify-between overflow-x-hidden">
 
         {/* HEADER */}
-        <header className="w-full border-b border-neutral-800/80 bg-neutral-950/80 backdrop-blur-md sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
+        <header className="w-full bg-neutral-950/80 backdrop-blur-md sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
           
           {/* Logo cliquable */}
           <Link 
@@ -26,7 +26,7 @@ export default function RootLayout({
             className="group flex items-center gap-0.5 font-black text-2xl tracking-tight transition hover:opacity-90"
           >
             <span className="text-white">Meet</span>
-            <span className="text-[#3B82F6]">us</span>
+            <span className="text-[#38bdf8]">us</span>
           </Link>
 
           <Link
@@ -35,7 +35,7 @@ export default function RootLayout({
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 text-xs text-neutral-400 hover:text-white transition bg-neutral-900 border border-neutral-800 hover:border-neutral-700 px-3 py-1.5 rounded-full"
           >
-            <span>Retour au site host</span>
+            <span>Layesall</span>
             <ExternalLink className="w-3.5 h-3.5" />
           </Link>
         </header>
