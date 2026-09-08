@@ -1,7 +1,16 @@
 from datetime import date, datetime
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
+
+# --- Question & Custom Fields Schemas ---
+class BookingQuestionSchema(BaseModel):
+    id: str
+    label: str
+    type: str  # text, textarea, number, select
+    required: bool = True
+    options: Optional[List[str]] = None
 
 
 # --- EventType Schemas ---
@@ -12,9 +21,14 @@ class EventTypeOut(BaseModel):
     title: str
     slug: str
     description: Optional[str] = None
+    included_features: List[str] = []
+    price: float
+    currency: str
     duration_minutes: int
+    is_custom_duration_allowed: bool
     buffer_time_minutes: int
     allowed_channels: List[str]
+    booking_questions: List[BookingQuestionSchema] = []
     color: str
 
 
@@ -37,6 +51,8 @@ class BookingCreateIn(BaseModel):
     client_phone: Optional[str] = Field(None, max_length=20)
     chosen_channel: str = Field(..., max_length=50)
     start_time: datetime
+    duration_minutes: Optional[int] = Field(None, help_text="Provide only if is_custom_duration_allowed is True.")
+    answers: Dict[str, Any] = Field(default_factory=dict, help_text="Dictionary of client answers to custom fields.")
 
 
 class BookingOut(BaseModel):
@@ -45,15 +61,18 @@ class BookingOut(BaseModel):
     id: UUID
     client_name: str
     client_email: str
+    client_phone: Optional[str] = None
     chosen_channel: str
     start_time: datetime
     end_time: datetime
+    total_price: float
+    answers: Dict[str, Any]
     google_meet_link: Optional[str] = None
     status: str
     cancel_token: UUID
 
 
-# --- Meet Access Schemas (Headless) ---
+# --- Meet Access Schemas ---
 class MeetAccessOut(BaseModel):
     code: str
     message: Optional[str] = None
@@ -62,7 +81,7 @@ class MeetAccessOut(BaseModel):
     expires_at: Optional[datetime] = None
 
 
-# --- Cancellation Schemas (Headless) ---
+# --- Cancellation Schemas ---
 class BookingCancelIn(BaseModel):
     cancel_token: UUID
 

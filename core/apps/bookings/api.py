@@ -23,7 +23,6 @@ from .services import (
     get_meet_access_service,
 )
 
-# Routers
 public_router = Router(tags=["Bookings Public"])
 admin_router = Router(tags=["Bookings Admin"], auth=JWTAuth())
 
@@ -35,39 +34,40 @@ def list_event_types(request):
     """Retrieve all active event types available for booking."""
     return EventType.objects.filter(is_active=True)
 
+
 @public_router.get("/event-types/{slug}", response=EventTypeOut, summary="Get Event Type Details")
 def get_event_type_by_slug(request, slug: str):
-    """Retrieve details of a specific event type by its slug."""
+    """Retrieve details for a specific event type by its slug."""
     return get_object_or_404(EventType, slug=slug, is_active=True)
 
 
 @public_router.get("/slots", response=DaySlotsOut, summary="Get Available Slots")
 def get_available_slots(request, event_type_slug: str, target_date: date):
-    """Calculate and return available booking time slots."""
+    """Calculate and return open time slots for a given date."""
     return get_available_slots_service(event_type_slug, target_date)
 
 
-@public_router.post("/book", response={201: BookingOut}, summary="Create Booking via JSON Payload")
+@public_router.post("/book", response={201: BookingOut}, summary="Create Booking")
 def create_booking(request, payload: BookingCreateIn):
-    """Create a new booking with full validation."""
+    """Create a new appointment booking with custom questions and duration validation."""
     booking = create_booking_service(payload)
     return 201, booking
 
 
 @public_router.post("/cancel", response={200: BookingCancelOut}, summary="Cancel Booking via Token")
 def cancel_booking_endpoint(request, payload: BookingCancelIn):
-    """Cancel a booking using its unique cancel_token."""
+    """Cancel an existing booking using its cancel_token."""
     cancel_booking_service(payload.cancel_token)
     return 200, {
         "success": True,
-        "message": "Booking cancelled successfully.",
+        "message": "Booking successfully cancelled.",
         "cancelled_at": timezone.now(),
     }
 
 
-@public_router.get("/{booking_id}/meet-access", response={200: MeetAccessOut, 400: MeetAccessOut, 403: MeetAccessOut, 410: MeetAccessOut},summary="Check and Retrieve Meet Access")
+@public_router.get("/{booking_id}/meet-access", response={200: MeetAccessOut, 400: MeetAccessOut, 403: MeetAccessOut, 410: MeetAccessOut}, summary="Check Meet Access")
 def get_meet_access(request, booking_id: UUID):
-    """Headless access check for Google Meet link."""
+    """Verify meeting access availability and obtain redirect URL."""
     status_code, response_payload = get_meet_access_service(booking_id)
     return status_code, response_payload
 
@@ -76,5 +76,5 @@ def get_meet_access(request, booking_id: UUID):
 
 @admin_router.get("/all", response=List[BookingOut], summary="List All Bookings")
 def list_all_bookings(request):
-    """Retrieve all system bookings (Requires JWT authorization)."""
+    """Fetch all system bookings (Requires JWT Authentication)."""
     return Booking.objects.all().order_by("-start_time")
