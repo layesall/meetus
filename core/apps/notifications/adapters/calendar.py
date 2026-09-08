@@ -1,7 +1,6 @@
-# core/apps/notifications/adapters/calendar.py
-
 import logging
 import os
+import uuid
 from typing import Optional, Tuple
 from zoneinfo import ZoneInfo
 
@@ -20,10 +19,10 @@ SCOPES = ["https://www.googleapis.com/auth/calendar.events"]
 
 
 class GoogleCalendarAdapter(BaseCalendarAdapter):
-    """Adaptateur pour la gestion des événements Google Calendar et liens Meet."""
+    """Adaptateur pour la gestion des événements Google Calendar et liens Meet (Admin uniquement)."""
 
     def _get_service(self):
-        """Authentifie l'utilisateur et retourne l'instance du service Google Calendar API."""
+        """Authentifie l'utilisateur admin et retourne l'instance du service Google Calendar API."""
         creds = None
         token_path = getattr(settings, "GOOGLE_TOKEN_PATH", settings.BASE_DIR / "token.json")
         credentials_path = getattr(
@@ -53,7 +52,10 @@ class GoogleCalendarAdapter(BaseCalendarAdapter):
         end_time,
         client_email: str,
     ) -> Tuple[Optional[str], Optional[str]]:
-        """Crée un événement Google Calendar avec lien visio Google Meet."""
+        """
+        Crée un événement Google Calendar sur le calendrier principal de l'admin uniquement.
+        Génère un lien Google Meet sans ajouter le client en participant (pas d'invitation agenda).
+        """
         try:
             service = self._get_service()
             app_tz_name = getattr(settings, "TIME_ZONE", "UTC")
@@ -69,6 +71,9 @@ class GoogleCalendarAdapter(BaseCalendarAdapter):
             else:
                 end_time = end_time.astimezone(app_tz)
 
+            # requestId unique via UUID pour éviter les conflits et erreurs Google API
+            unique_request_id = f"meetus-{uuid.uuid4().hex}"
+
             event_body = {
                 "summary": summary,
                 "description": description,
@@ -80,12 +85,10 @@ class GoogleCalendarAdapter(BaseCalendarAdapter):
                     "dateTime": end_time.isoformat(),
                     "timeZone": app_tz_name,
                 },
-                "attendees": [
-                    {"email": client_email},
-                ],
+                # Pas de liste 'attendees' : le client ne reçoit pas d'invitation dans son agenda
                 "conferenceData": {
                     "createRequest": {
-                        "requestId": f"meetus-{start_time.strftime('%Y%m%d%H%M%S')}",
+                        "requestId": unique_request_id,
                         "conferenceSolutionKey": {"type": "hangoutsMeet"},
                     }
                 },
@@ -97,21 +100,29 @@ class GoogleCalendarAdapter(BaseCalendarAdapter):
                     calendarId="primary",
                     body=event_body,
                     conferenceDataVersion=1,
+                    sendUpdates="none",  # N'envoie aucune notification par Google
                 )
                 .execute()
             )
 
             google_event_id = event.get("id")
+
+            # Extraction robuste du lien Google Meet
             google_meet_link = event.get("hangoutLink")
+            if not google_meet_link and "conferenceData" in event:
+                for entry_point in event["conferenceData"].get("entryPoints", []):
+                    if entry_point.get("entryPointType") == "video":
+                        google_meet_link = entry_point.get("uri")
+                        break
 
             return google_event_id, google_meet_link
 
         except Exception as e:
-            logger.error(f"Erreur lors de la création de l'événement Google Calendar : {e}")
+            logger.error(f"Error creating Google Calendar event: {e}", exc_info=True)
             return None, None
 
     def delete_event(self, event_id: str) -> bool:
-        """Supprime un événement dans Google Calendar."""
+        """Supprime un événement du calendrier principal de l'admin."""
         if not event_id:
             return False
 
@@ -124,5 +135,5 @@ class GoogleCalendarAdapter(BaseCalendarAdapter):
             ).execute()
             return True
         except Exception as e:
-            logger.error(f"Erreur lors de la suppression de l'événement Google Calendar ({event_id}) : {e}")
+            logger.error(f"Error deleting Google Calendar event ({event_id}): {e}", exc_info=True)
             return False
