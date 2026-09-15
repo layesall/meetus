@@ -2,12 +2,10 @@ import logging
 from datetime import date, datetime, timedelta
 from typing import Dict, Tuple
 from uuid import UUID
-
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from ninja.errors import HttpError
-
 from apps.notifications.services import NotificationService
 from .models import AvailabilityRule, BlockedDate, Booking, EventType
 from .schemas import BookingCreateIn
@@ -89,7 +87,6 @@ def create_booking_service(payload: BookingCreateIn) -> Booking:
     if payload.chosen_channel not in event_type.allowed_channels:
         raise HttpError(400, "Selected communication channel is not allowed.")
 
-    # Duration handling (Standard vs Custom)
     if event_type.is_custom_duration_allowed and payload.duration_minutes:
         if payload.duration_minutes < event_type.duration_minutes:
             raise HttpError(400, f"Minimum allowed duration is {event_type.duration_minutes} minutes.")
@@ -101,7 +98,6 @@ def create_booking_service(payload: BookingCreateIn) -> Booking:
     if is_date_blocked(target_date):
         raise HttpError(400, "Selected date is unavailable.")
 
-    # Schedule computations
     duration = timedelta(minutes=booking_duration_minutes)
     buffer_time = timedelta(minutes=event_type.buffer_time_minutes)
     end_time = start_time + duration
@@ -119,7 +115,6 @@ def create_booking_service(payload: BookingCreateIn) -> Booking:
     if not valid_window_exists:
         raise HttpError(400, "Requested slot exceeds operational working hours.")
 
-    # Pro-rata price calculation
     if event_type.is_custom_duration_allowed and payload.duration_minutes:
         ratio = booking_duration_minutes / event_type.duration_minutes
         calculated_price = float(event_type.price) * ratio
@@ -127,6 +122,25 @@ def create_booking_service(payload: BookingCreateIn) -> Booking:
         calculated_price = float(event_type.price)
 
     blocked_until = end_time + buffer_time
+
+    google_event_id = None
+    google_meet_link = None
+
+    # RÈGLE : Récupération préalable des liens avant écriture DB
+    if payload.chosen_channel == "google_meet":
+        # Instanciation temporaire non sauvegardée pour génération d'événement
+        temp_booking = Booking(
+            event_type=event_type,
+            client_name=payload.client_name,
+            client_email=payload.client_email,
+            start_time=start_time,
+            end_time=end_time,
+        )
+        google_event_id, google_meet_link = notification_service.create_calendar_event(temp_booking)
+
+        if not google_event_id or not google_meet_link:
+            logger.error("Failed to generate Google Meet link. Aborting booking.")
+            raise HttpError(502, "Unable to generate Google Meet link. Booking aborted.")
 
     with transaction.atomic():
         conflict = (
@@ -140,9 +154,12 @@ def create_booking_service(payload: BookingCreateIn) -> Booking:
         )
 
         if conflict:
+            # Nettoyage de l'événement Google si un conflit survient au dernier moment
+            if google_event_id:
+                notification_service.delete_calendar_event(google_event_id)
             raise HttpError(409, "This time slot is no longer available.")
 
-        booking = Booking(
+        booking = Booking.objects.create(
             event_type=event_type,
             client_name=payload.client_name,
             client_email=payload.client_email,
@@ -152,28 +169,18 @@ def create_booking_service(payload: BookingCreateIn) -> Booking:
             start_time=start_time,
             end_time=end_time,
             total_price=calculated_price,
+            google_event_id=google_event_id,
+            google_meet_link=google_meet_link,
             status=Booking.Status.CONFIRMED,
         )
 
-        google_event_id = None
-        google_meet_link = None
-
-        if payload.chosen_channel == "google_meet":
-            try:
-                google_event_id, google_meet_link = notification_service.create_calendar_event(booking)
-            except Exception as e:
-                logger.error(f"Google Calendar creation failed: {e}")
-
-        # Association et sauvegarde en base de données
-        booking.google_event_id = google_event_id
-        booking.google_meet_link = google_meet_link
-        booking.save()
-
-    # Envoi des e-mails post-sauvegarde (garantit la présence de google_meet_link)
+    # Envoi des e-mails uniquement si la création DB est validée
     try:
-        notification_service.send_booking_confirmation(booking)
+        email_sent = notification_service.send_booking_confirmation(booking)
+        if not email_sent:
+            logger.warning(f"Booking {booking.id} created, but email dispatch failed.")
     except Exception as e:
-        logger.error(f"Confirmation email dispatch failed: {e}")
+        logger.error(f"Confirmation email error for booking {booking.id}: {e}")
 
     return booking
 

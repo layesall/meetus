@@ -10,15 +10,11 @@ User = get_user_model()
 
 
 class EventType(models.Model):
-    """
-    Represents a service or meeting type offered to clients.
-    """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=255)
     slug = models.SlugField(unique=True)
     description = models.TextField(blank=True, default="")
 
-    # JSONForm Schema: List of key features/inclusions
     included_features = JSONField(
         default=list,
         blank=True,
@@ -27,10 +23,9 @@ class EventType(models.Model):
             "items": {"type": "string"},
             "title": "Included features"
         },
-        help_text="List of included points (e.g., 'Presentation', 'Feasibility Assessment')."
+        help_text="List of included points."
     )
 
-    # Pricing
     price = models.DecimalField(
         max_digits=10,
         decimal_places=2,
@@ -39,7 +34,6 @@ class EventType(models.Model):
     )
     currency = models.CharField(max_length=3, default="EUR")
 
-    # Durations
     duration_minutes = models.PositiveIntegerField(
         help_text="Standard duration of the meeting in minutes."
     )
@@ -52,7 +46,6 @@ class EventType(models.Model):
         help_text="Required break time after the meeting in minutes."
     )
 
-    # JSONForm Schema: Allowed communication channels
     allowed_channels = JSONField(
         default=list,
         schema={
@@ -70,7 +63,6 @@ class EventType(models.Model):
         help_text="Select accepted communication channels."
     )
 
-    # JSONForm Schema: Dynamic booking questions
     QUESTIONS_SCHEMA = {
         "type": "array",
         "title": "Client Form Questions",
@@ -99,7 +91,7 @@ class EventType(models.Model):
         default=list,
         blank=True,
         schema=QUESTIONS_SCHEMA,
-        help_text="Configuration of custom form fields to collect during booking."
+        help_text="Configuration of custom form fields."
     )
 
     color = models.CharField(max_length=7, default="#38bdf8")
@@ -158,17 +150,16 @@ class Booking(models.Model):
     client_email = models.EmailField()
     client_phone = models.CharField(max_length=30, blank=True, null=True)
 
-    # JSONForm Schema: Answers stored as Key/Value pairs
     answers = JSONField(
         default=dict,
         blank=True,
         schema={
             "type": "dict",
             "title": "Form Responses",
-            "keys":{},
+            "keys": {},
             "additionalProperties": True
         },
-        help_text="Client responses to custom questions configured for this event type."
+        help_text="Client responses to custom questions."
     )
 
     chosen_channel = models.CharField(max_length=50)
@@ -184,6 +175,11 @@ class Booking(models.Model):
 
     def __str__(self):
         return f"{self.client_name} - {self.event_type.title}"
+
+    def get_cancel_url(self) -> str:
+        """Génère le lien complet de demande d'annulation pour l'e-mail."""
+        site_url = getattr(settings, "SITE_URL", "http://localhost:3000").rstrip("/")
+        return f"{site_url}/cancel?token={self.cancel_token}"
 
     @property
     def is_expired(self) -> bool:

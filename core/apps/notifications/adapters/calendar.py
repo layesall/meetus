@@ -15,7 +15,7 @@ from apps.notifications.adapters.base import BaseCalendarAdapter
 
 logger = logging.getLogger(__name__)
 
-SCOPES = ["https://www.googleapis.com/auth/calendar.events"]
+SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
 
 class GoogleCalendarAdapter(BaseCalendarAdapter):
