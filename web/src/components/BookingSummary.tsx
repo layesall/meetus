@@ -1,172 +1,126 @@
-// components/BookingSummary.tsx
-
 "use client";
 
-import { EventType, TimeSlot } from "@/lib/api";
-import { Calendar, Video, User, Phone, HelpCircle, Clock } from "lucide-react";
+import {
+  Calendar,
+  Clock,
+  CreditCard,
+  Video,
+  User,
+  Mail,
+  Phone,
+  MessageSquare,
+} from "lucide-react";
+import type { EventType, TimeSlot } from "@/lib/api";
+import type { ClientState } from "./BookingWizard";
 
-interface BookingSummaryProps {
+interface Props {
   event: EventType;
   slot: TimeSlot;
-  clientName: string;
-  clientEmail: string;
-  clientPhone: string;
-  chosenChannel: string;
-  customDuration?: number;
-  answers: Record<string, any>;
-  onBack: () => void;
-  onSubmit: () => void;
-  isSubmitting: boolean;
-  accentColor: string;
+  client: ClientState;
 }
 
-export function BookingSummary({
-  event,
-  slot,
-  clientName,
-  clientEmail,
-  clientPhone,
-  chosenChannel,
-  customDuration,
-  answers,
-  onBack,
-  onSubmit,
-  isSubmitting,
-  accentColor,
-}: BookingSummaryProps) {
-  const duration = customDuration || event.duration_minutes;
+export function BookingSummary({ event, slot, client }: Props) {
+  const priceLabel =
+    event.price === 0 ? "Gratuit" : `${event.price} ${event.currency || "EUR"}`;
 
-  // Calcul dynamique du prix au prorata si durée personnalisée autorisée
-  const calculateTotalPrice = () => {
-    if (!event.price || event.price === 0) return 0;
+  const dateLabel = new Date(slot.start_time).toLocaleString("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
-    if (event.is_custom_duration_allowed && customDuration && event.duration_minutes > 0) {
-      const pricePerMinute = event.price / event.duration_minutes;
-      return Number((pricePerMinute * customDuration).toFixed(2));
-    }
-
-    return event.price;
-  };
-
-  const totalPrice = calculateTotalPrice();
-  const formattedPrice =
-    totalPrice === 0 ? "Gratuit" : `${totalPrice} ${event.currency || "EUR"}`;
+  const answeredQuestions = event.booking_questions.filter(
+    (q) => client.answers[q.id] && String(client.answers[q.id]).trim() !== ""
+  );
 
   return (
-    <div>
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold text-white">Récapitulatif</h2>
-        <p className="text-base text-neutral-400 mt-1">
-          Vérifiez vos informations avant de confirmer.
-        </p>
-      </div>
-
-      <div className="max-w-2xl bg-neutral-900/30 rounded-2xl p-8 border border-neutral-800/60 space-y-5">
-        {/* Prestation */}
-        <div className="flex items-center justify-between pb-4 border-b border-neutral-800/50">
-          <span className="text-base text-neutral-400">Prestation</span>
-          <span className="font-semibold text-white text-lg">{event.title}</span>
-        </div>
-
-        {/* Date, Heure & Durée */}
-        <div className="flex items-center justify-between pb-4 border-b border-neutral-800/50">
-          <span className="text-base text-neutral-400 flex items-center gap-2">
-            <Calendar className="w-5 h-5" /> Date & Heure
+    <div className="space-y-4">
+      <Section title="Prestation">
+        <Row icon={<Calendar className="h-4 w-4" />} label="Date & heure">
+          <span className="capitalize">{dateLabel}</span>
+        </Row>
+        <Row icon={<Clock className="h-4 w-4" />} label="Durée">
+          {event.duration_minutes} min
+        </Row>
+        <Row icon={<Video className="h-4 w-4" />} label="Canal">
+          <span className="capitalize">
+            {client.channel.replace(/_/g, " ")}
           </span>
-          <div className="text-right">
-            <span className="font-semibold text-white text-base block">
-              {new Date(slot.start_time).toLocaleString("fr-FR", {
-                dateStyle: "full",
-                timeStyle: "short",
-              })}
-            </span>
-            <span className="text-xs text-neutral-400 flex items-center justify-end gap-1 mt-0.5">
-              <Clock className="w-3 h-3" /> Durée : {duration} min
-              {event.is_custom_duration_allowed && customDuration && customDuration !== event.duration_minutes && (
-                <span className="text-xs text-amber-400 ml-1">(Personnalisée)</span>
-              )}
-            </span>
-          </div>
-        </div>
+        </Row>
+        <Row icon={<CreditCard className="h-4 w-4" />} label="Tarif">
+          <span className="font-semibold text-slate-900">{priceLabel}</span>
+        </Row>
+      </Section>
 
-        {/* Canal */}
-        <div className="flex items-center justify-between pb-4 border-b border-neutral-800/50">
-          <span className="text-base text-neutral-400 flex items-center gap-2">
-            <Video className="w-5 h-5" /> Canal
-          </span>
-          <span className="font-semibold text-white capitalize text-base">
-            {chosenChannel.replace(/_/g, " ")}
-          </span>
-        </div>
-
-        {/* Participant */}
-        <div className="flex items-center justify-between pb-4 border-b border-neutral-800/50">
-          <span className="text-base text-neutral-400 flex items-center gap-2">
-            <User className="w-5 h-5" /> Participant
-          </span>
-          <div className="text-right">
-            <span className="font-semibold text-white text-base block">{clientName}</span>
-            <span className="text-xs text-neutral-400 block">{clientEmail}</span>
-            {clientPhone && (
-              <span className="text-xs text-neutral-400 flex items-center justify-end gap-1 mt-0.5">
-                <Phone className="w-3 h-3" /> {clientPhone}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Réponses aux questions personnalisées */}
-        {event.booking_questions && event.booking_questions.length > 0 && Object.keys(answers).length > 0 && (
-          <div className="pb-4 border-b border-neutral-800/50 space-y-2">
-            <span className="text-sm font-semibold text-neutral-300 flex items-center gap-2 mb-2">
-              <HelpCircle className="w-4 h-4" /> Questions/Réponses :
-            </span>
-            {event.booking_questions.map((q) => {
-              const ans = answers[q.id];
-              if (!ans) return null;
-              return (
-                <div key={q.id} className="text-xs flex justify-between gap-4">
-                  <span className="text-neutral-400">{q.label}:</span>
-                  <span className="text-white font-medium text-right">{String(ans)}</span>
-                </div>
-              );
-            })}
-          </div>
+      <Section title="Vos coordonnées">
+        <Row icon={<User className="h-4 w-4" />} label="Nom">
+          {client.name}
+        </Row>
+        <Row icon={<Mail className="h-4 w-4" />} label="Email">
+          {client.email}
+        </Row>
+        {client.phone.trim() !== "" && (
+          <Row icon={<Phone className="h-4 w-4" />} label="Téléphone">
+            {client.phone}
+          </Row>
         )}
+      </Section>
 
-        {/* Prix Total */}
-        <div className="flex items-center justify-between pt-2">
-          <div>
-            <span className="text-base text-neutral-400 block">Prix total</span>
-            {event.is_custom_duration_allowed && customDuration && customDuration !== event.duration_minutes && (
-              <span className="text-xs text-neutral-500 block">
-                Calculé au prorata ({duration} min)
+      {answeredQuestions.length > 0 && (
+        <Section title="Vos réponses">
+          {answeredQuestions.map((q) => (
+            <Row
+              key={q.id}
+              icon={<MessageSquare className="h-4 w-4" />}
+              label={q.label}
+            >
+              <span className="whitespace-pre-line">
+                {String(client.answers[q.id])}
               </span>
-            )}
-          </div>
-          <span className="font-bold text-2xl" style={{ color: accentColor }}>
-            {formattedPrice}
-          </span>
-        </div>
-      </div>
-
-      {/* Actions */}
-      <div className="mt-10 pt-6 border-t border-neutral-800/60 flex justify-between">
-        <button
-          onClick={onBack}
-          className="text-base text-neutral-400 hover:text-white transition"
-        >
-          ← Retour
-        </button>
-        <button
-          disabled={isSubmitting}
-          onClick={onSubmit}
-          style={{ backgroundColor: accentColor }}
-          className="px-8 py-3 rounded-xl text-base font-medium text-white shadow-md transition hover:shadow-lg disabled:opacity-50"
-        >
-          {isSubmitting ? "Confirmation..." : "Confirmer la réservation"}
-        </button>
-      </div>
+            </Row>
+          ))}
+        </Section>
+      )}
     </div>
+  );
+}
+
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+      <span className="mb-3 block text-xs font-medium uppercase tracking-wide text-slate-500">
+        {title}
+      </span>
+      <ul className="space-y-2.5 text-sm">{children}</ul>
+    </div>
+  );
+}
+
+function Row({
+  icon,
+  label,
+  children,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <li className="flex items-start gap-2.5">
+      <span className="mt-0.5 shrink-0 text-slate-400">{icon}</span>
+      <div className="flex min-w-0 flex-1 flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
+        <span className="text-slate-500">{label}</span>
+        <span className="text-right text-slate-800">{children}</span>
+      </div>
+    </li>
   );
 }

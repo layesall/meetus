@@ -95,3 +95,13 @@ export async function createBooking(payload: BookingPayload): Promise<BookingRes
   }
   return res.json();
 }
+
+export async function cancelBooking(id: string, token: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/bookings/${id}/cancel?token=${token}`, {
+    method: "POST",
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || errorData.detail || "Annulation impossible");
+  }
+}

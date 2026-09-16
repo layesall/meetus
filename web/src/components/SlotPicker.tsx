@@ -1,15 +1,19 @@
-// components/SlotPicker.tsx
-// Créneaux en grille, avec plus d'espace.
-
 "use client";
 
-import { TimeSlot } from "@/lib/api";
+import type { TimeSlot } from "@/lib/api";
 
 interface SlotPickerProps {
   slots: TimeSlot[];
   selectedSlot: TimeSlot | null;
   onSelectSlot: (slot: TimeSlot) => void;
   loading: boolean;
+}
+
+function formatTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString("fr-FR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 export function SlotPicker({
@@ -20,48 +24,46 @@ export function SlotPicker({
 }: SlotPickerProps) {
   if (loading) {
     return (
-      <div className="py-12 text-center text-sm text-neutral-500">
-        <div className="w-6 h-6 border-2 border-neutral-600 border-t-transparent rounded-full animate-spin inline-block" />
-        <span className="ml-3">Chargement...</span>
+      <div className="flex items-center justify-center gap-2 py-10 text-sm text-slate-500">
+        <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-slate-700" />
+        Chargement...
       </div>
     );
   }
 
   if (slots.length === 0) {
     return (
-      <div className="py-12 text-center text-sm text-neutral-500">
+      <div className="py-10 text-center text-sm text-slate-500">
         Aucun créneau disponible
       </div>
     );
   }
 
-  const now = new Date();
+  const now = Date.now();
 
   return (
-    <div className="grid grid-cols-2 gap-3 max-h-[320px] overflow-y-auto pr-2">
+    <div className="grid max-h-[360px] grid-cols-2 gap-2 overflow-y-auto pr-1">
       {slots.map((slot) => {
-        const date = new Date(slot.start_time);
-        const time = date.toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        });
-        const isPast = date < now;
+        const isPast = new Date(slot.start_time).getTime() < now;
         const isSelected = selectedSlot?.start_time === slot.start_time;
+
+        const base =
+          "flex h-10 items-center justify-center rounded-md border text-sm font-medium transition";
+        const state = isSelected
+          ? "border-slate-900 bg-slate-900 text-white"
+          : isPast
+            ? "border-slate-100 bg-slate-50 text-slate-300 cursor-not-allowed"
+            : "border-slate-200 bg-white text-slate-700 hover:border-slate-900 hover:bg-slate-50";
 
         return (
           <button
             key={slot.start_time}
+            type="button"
             disabled={isPast}
-            onClick={() => !isPast && onSelectSlot(slot)}
-            className={`py-3 px-4 rounded-xl text-base font-medium border transition ${
-              isPast
-                ? "border-transparent text-neutral-600 cursor-not-allowed line-through"
-                : isSelected
-                ? "border-white bg-white text-neutral-950 shadow-md"
-                : "border-neutral-800 text-neutral-300 hover:border-neutral-600 hover:bg-neutral-800/50"
-            }`}
+            onClick={() => onSelectSlot(slot)}
+            className={`${base} ${state}`}
           >
-            {time}
+            {formatTime(slot.start_time)}
           </button>
         );
       })}

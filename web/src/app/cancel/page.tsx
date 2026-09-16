@@ -1,27 +1,91 @@
-// src/app/cancel/page.tsx
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { XCircle } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { XCircle, Loader2, CheckCircle2 } from "lucide-react";
+import { cancelBooking } from "@/lib/api";
+
+type Status = "idle" | "pending" | "done" | "error";
 
 export default function CancelPage() {
-  return (
-    <div className="max-w-md mx-auto text-center py-16">
-      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-950 border border-red-800 text-red-400 mb-6">
-        <XCircle className="w-8 h-8" />
-      </div>
+  const params = useSearchParams();
+  const id = params.get("id");
+  const token = params.get("token");
 
-      <h1 className="text-2xl font-bold text-white mb-2">
-        Rendez-vous annulé
+  const [status, setStatus] = useState<Status>(id && token ? "pending" : "idle");
+  const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!id || !token) return;
+    let active = true;
+    (async () => {
+      try {
+        await cancelBooking(id, token);
+        if (active) setStatus("done");
+      } catch (err: unknown) {
+        if (!active) return;
+        setStatus("error");
+        setMessage(err instanceof Error ? err.message : "Erreur inconnue");
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [id, token]);
+
+  return (
+    <div className="mx-auto w-full max-w-md px-6 py-16 text-center">
+      <Icon status={status} />
+
+      <h1 className="mt-6 text-2xl font-bold text-slate-900">
+        {status === "pending" && "Annulation en cours…"}
+        {status === "done" && "Rendez-vous annulé"}
+        {status === "error" && "Annulation impossible"}
+        {status === "idle" && "Aucun rendez-vous à annuler"}
       </h1>
-      <p className="text-sm text-neutral-400 mb-8 leading-relaxed">
-        Votre réservation a bien été annulée. L'événement a été supprimé de l'agenda et un e-mail de confirmation vous a été adressé.
+
+      <p className="mt-2 text-sm leading-relaxed text-slate-600">
+        {status === "pending" &&
+          "Nous traitons votre demande, un instant."}
+        {status === "done" &&
+          "L'événement a été supprimé de l'agenda. Un e-mail de confirmation vous a été envoyé."}
+        {status === "error" &&
+          (message ?? "Une erreur est survenue. Réessayez ou contactez-nous.")}
+        {status === "idle" &&
+          "Le lien semble incomplet. Vous pouvez reprendre un rendez-vous depuis la page d'accueil."}
       </p>
 
-      <Link
-        href="/"
-        className="inline-block bg-neutral-900 border border-neutral-800 hover:border-neutral-700 text-white font-medium px-6 py-2.5 rounded-lg text-sm transition"
-      >
-        Reprendre un rendez-vous
-      </Link>
+      <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+        <Link
+          href="/"
+          className="inline-flex items-center justify-center rounded-md bg-slate-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
+        >
+          Reprendre un rendez-vous
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function Icon({ status }: { status: Status }) {
+  if (status === "pending") {
+    return (
+      <div className="mx-auto inline-flex h-16 w-16 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+  if (status === "done") {
+    return (
+      <div className="mx-auto inline-flex h-16 w-16 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-600">
+        <CheckCircle2 className="h-8 w-8" />
+      </div>
+    );
+  }
+  return (
+    <div className="mx-auto inline-flex h-16 w-16 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-600">
+      <XCircle className="h-8 w-8" />
     </div>
   );
 }
