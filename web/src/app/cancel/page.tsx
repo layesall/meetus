@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { XCircle, Loader2, CheckCircle2 } from "lucide-react";
@@ -10,18 +10,17 @@ type Status = "idle" | "pending" | "done" | "error";
 
 export default function CancelPage() {
   const params = useSearchParams();
-  const id = params.get("id");
   const token = params.get("token");
 
-  const [status, setStatus] = useState<Status>(id && token ? "pending" : "idle");
+  const [status, setStatus] = useState<Status>(token ? "pending" : "idle");
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!id || !token) return;
+    if (!token) return;
     let active = true;
     (async () => {
       try {
-        await cancelBooking(id, token);
+        await cancelBooking(token);
         if (active) setStatus("done");
       } catch (err: unknown) {
         if (!active) return;
@@ -32,39 +31,41 @@ export default function CancelPage() {
     return () => {
       active = false;
     };
-  }, [id, token]);
+  }, [token]);
 
   return (
-    <div className="mx-auto w-full max-w-md px-6 py-16 text-center">
-      <Icon status={status} />
+    <Suspense fallback={<div className="py-16 text-center text-sm text-slate-500">Chargement…</div>}>
+      <div className="mx-auto w-full max-w-md px-6 py-16 text-center">
+        <Icon status={status} />
 
-      <h1 className="mt-6 text-2xl font-bold text-slate-900">
-        {status === "pending" && "Annulation en cours…"}
-        {status === "done" && "Rendez-vous annulé"}
-        {status === "error" && "Annulation impossible"}
-        {status === "idle" && "Aucun rendez-vous à annuler"}
-      </h1>
+        <h1 className="mt-6 text-2xl font-bold text-slate-900">
+          {status === "pending" && "Annulation en cours…"}
+          {status === "done" && "Rendez-vous annulé"}
+          {status === "error" && "Annulation impossible"}
+          {status === "idle" && "Aucun rendez-vous à annuler"}
+        </h1>
 
-      <p className="mt-2 text-sm leading-relaxed text-slate-600">
-        {status === "pending" &&
-          "Nous traitons votre demande, un instant."}
-        {status === "done" &&
-          "L'événement a été supprimé de l'agenda. Un e-mail de confirmation vous a été envoyé."}
-        {status === "error" &&
-          (message ?? "Une erreur est survenue. Réessayez ou contactez-nous.")}
-        {status === "idle" &&
-          "Le lien semble incomplet. Vous pouvez reprendre un rendez-vous depuis la page d'accueil."}
-      </p>
+        <p className="mt-2 text-sm leading-relaxed text-slate-600">
+          {status === "pending" &&
+            "Nous traitons votre demande, un instant."}
+          {status === "done" &&
+            "L'événement a été supprimé de l'agenda. Un e-mail de confirmation vous a été envoyé."}
+          {status === "error" &&
+            (message ?? "Une erreur est survenue. Réessayez ou contactez-nous.")}
+          {status === "idle" &&
+            "Le lien semble incomplet. Vous pouvez reprendre un rendez-vous depuis la page d'accueil."}
+        </p>
 
-      <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-        <Link
-          href="/"
-          className="inline-flex items-center justify-center rounded-md bg-slate-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
-        >
-          Reprendre un rendez-vous
-        </Link>
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+          <Link
+            href="/"
+            className="inline-flex items-center justify-center rounded-md bg-slate-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
+            >
+            Reprendre un rendez-vous
+          </Link>
+        </div>
       </div>
-    </div>
+    </Suspense>
   );
 }
 

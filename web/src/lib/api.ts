@@ -96,12 +96,29 @@ export async function createBooking(payload: BookingPayload): Promise<BookingRes
   return res.json();
 }
 
-export async function cancelBooking(id: string, token: string): Promise<void> {
-  const res = await fetch(`${API_BASE_URL}/bookings/${id}/cancel?token=${token}`, {
+// Cancel an existing booking by token.
+export async function cancelBooking(token: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/bookings/cancel`, {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ cancel_token: token }),
   });
+
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.message || errorData.detail || "Annulation impossible");
+    let msg = "Annulation impossible";
+
+    if (typeof errorData?.message === "string") {
+      msg = errorData.message;
+    } else if (typeof errorData?.detail === "string") {
+      msg = errorData.detail;
+    } else if (Array.isArray(errorData?.detail)) {
+      msg = errorData.detail
+        .map((e: { msg?: string }) => e?.msg)
+        .filter(Boolean)
+        .join(" · ");
+    }
+
+    throw new Error(msg);
   }
 }

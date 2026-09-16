@@ -18,7 +18,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr" className="h-full">
-      <body className="flex min-h-dvh flex-col bg-slate-50 text-slate-900 antialiased">
+      <body className="flex min-h-dvh flex-col bg-slate-50 text-slate-900 antialiased" suppressHydrationWarning>
         <Header />
         <main className="flex flex-1 flex-col">{children}</main>
         <SignatureBadge />
