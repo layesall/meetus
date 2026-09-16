@@ -1,7 +1,10 @@
+// app/layout.tsx
+// Root layout — header only on homepage, signature badge everywhere.
+
 import type { Metadata } from "next";
-import Link from "next/link";
-import { SignatureBadge } from "@/components/SignatureBadge";
 import "./globals.css";
+import { Header } from "@/components/Header";
+import { SignatureBadge } from "@/components/SignatureBadge";
 
 export const metadata: Metadata = {
   title: "Meetus - Planificateur de rendez-vous",
@@ -15,23 +18,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr" className="h-full">
-      <body className="bg-slate-50 text-slate-900 min-h-dvh antialiased flex flex-col overflow-x-hidden">
-        <header className="w-full bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-200">
-          <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-            <Link
-              href="/"
-              className="flex items-center gap-0.5 font-black text-2xl tracking-tight transition hover:opacity-80"
-            >
-              <span className="text-slate-900">Meet</span>
-              <span className="text-sky-500">us</span>
-            </Link>
-          </div>
-        </header>
-
-        <main className="w-full flex-1 flex flex-col">
-          {children}
-        </main>
-
+      <body className="flex min-h-dvh flex-col bg-slate-50 text-slate-900 antialiased">
+        <Header />
+        <main className="flex flex-1 flex-col">{children}</main>
         <SignatureBadge />
       </body>
     </html>

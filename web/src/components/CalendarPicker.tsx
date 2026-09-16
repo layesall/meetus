@@ -1,11 +1,14 @@
+// components/CalendarPicker.tsx
+// Minimal calendar — larger cells for readability.
+
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-interface CalendarPickerProps {
+interface Props {
   selectedDate: string;
-  onSelectDate: (dateStr: string) => void;
+  onSelectDate: (date: string) => void;
   minNoticeHours?: number;
 }
 
@@ -15,111 +18,87 @@ const MONTHS = [
 ];
 const DAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 
-function pad(n: number): string {
-  return String(n).padStart(2, "0");
-}
-
-function toISO(y: number, m: number, d: number): string {
-  return `${y}-${pad(m + 1)}-${pad(d)}`;
-}
-
 export function CalendarPicker({
   selectedDate,
   onSelectDate,
-  minNoticeHours = 0,
-}: CalendarPickerProps) {
-  const initial = selectedDate ? new Date(selectedDate) : new Date();
-  const [view, setView] = useState({ y: initial.getFullYear(), m: initial.getMonth() });
+  minNoticeHours = 12,
+}: Props) {
+  const [current, setCurrent] = useState(() => {
+    const d = selectedDate ? new Date(selectedDate) : new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  });
 
-  const minDate = useMemo(() => {
-    const d = new Date();
-    d.setHours(d.getHours() + minNoticeHours);
-    d.setHours(0, 0, 0, 0);
-    return toISO(d.getFullYear(), d.getMonth(), d.getDate());
-  }, [minNoticeHours]);
+  const year = current.getFullYear();
+  const month = current.getMonth();
+  const firstDayIdx = (new Date(year, month, 1).getDay() + 6) % 7;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-  const todayISO = useMemo(() => {
-    const d = new Date();
-    return toISO(d.getFullYear(), d.getMonth(), d.getDate());
-  }, []);
-
-  const cells = useMemo(() => {
-    const first = new Date(view.y, view.m, 1);
-    const offset = (first.getDay() + 6) % 7; // lundi = 0
-    const daysInMonth = new Date(view.y, view.m + 1, 0).getDate();
-    const arr: (number | null)[] = [];
-    for (let i = 0; i < offset; i++) arr.push(null);
-    for (let d = 1; d <= daysInMonth; d++) arr.push(d);
-    while (arr.length % 7 !== 0) arr.push(null);
-    return arr;
-  }, [view]);
-
-  const goPrev = () =>
-    setView((v) => (v.m === 0 ? { y: v.y - 1, m: 11 } : { y: v.y, m: v.m - 1 }));
-  const goNext = () =>
-    setView((v) => (v.m === 11 ? { y: v.y + 1, m: 0 } : { y: v.y, m: v.m + 1 }));
+  const minAllowed = new Date();
+  minAllowed.setHours(minAllowed.getHours() + minNoticeHours);
+  const minStr = minAllowed.toISOString().slice(0, 10);
+  const todayStr = new Date().toISOString().slice(0, 10);
 
   return (
-    <div className="select-none">
-      <div className="mb-4 flex items-center justify-between">
-        <span className="text-sm font-semibold text-slate-900">
-          {MONTHS[view.m]} {view.y}
+    <div className="w-full">
+      <div className="mb-5 flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => setCurrent(new Date(year, month - 1, 1))}
+          className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+          aria-label="Mois précédent"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+        <span className="text-base font-semibold text-slate-900">
+          {MONTHS[month]} {year}
         </span>
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={goPrev}
-            aria-label="Mois précédent"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={goNext}
-            aria-label="Mois suivant"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => setCurrent(new Date(year, month + 1, 1))}
+          className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+          aria-label="Mois suivant"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
       </div>
 
-      <div className="mb-1 grid grid-cols-7 gap-1 text-center text-[11px] font-medium uppercase tracking-wide text-slate-400">
+      <div className="mb-2 grid grid-cols-7 gap-1 text-center text-xs font-medium text-slate-400">
         {DAYS.map((d) => (
-          <div key={d} className="py-1">{d}</div>
+          <div key={d}>{d}</div>
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-1">
-        {cells.map((day, i) => {
-          if (day === null) return <div key={`e-${i}`} />;
-
-          const iso = toISO(view.y, view.m, day);
-          const isSelected = iso === selectedDate;
-          const isToday = iso === todayISO;
-          const isDisabled = iso < minDate;
-
-          const base =
-            "relative mx-auto flex h-9 w-9 items-center justify-center rounded-full text-sm font-medium transition";
-          const state = isSelected
-            ? "bg-slate-900 text-white shadow-sm"
-            : isDisabled
-              ? "text-slate-300 cursor-not-allowed"
-              : "text-slate-700 hover:bg-slate-100";
+      <div className="grid grid-cols-7 gap-1.5">
+        {Array.from({ length: firstDayIdx }).map((_, i) => (
+          <div key={`e-${i}`} />
+        ))}
+        {Array.from({ length: daysInMonth }).map((_, i) => {
+          const day = i + 1;
+          const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(
+            day
+          ).padStart(2, "0")}`;
+          const disabled = dateStr < minStr;
+          const isToday = dateStr === todayStr;
+          const isSelected = dateStr === selectedDate;
 
           return (
             <button
-              key={iso}
+              key={day}
               type="button"
-              disabled={isDisabled}
-              onClick={() => onSelectDate(iso)}
-              className={`${base} ${state}`}
+              disabled={disabled}
+              onClick={() => onSelectDate(dateStr)}
+              className={[
+                "h-12 w-full rounded-lg text-sm font-medium transition",
+                isSelected
+                  ? "bg-slate-900 text-white shadow-sm"
+                  : disabled
+                  ? "cursor-not-allowed text-slate-300"
+                  : isToday
+                  ? "text-sky-600 ring-1 ring-inset ring-sky-200 hover:bg-sky-50"
+                  : "text-slate-700 hover:bg-slate-100",
+              ].join(" ")}
             >
               {day}
-              {isToday && !isSelected && (
-                <span className="absolute bottom-1 h-1 w-1 rounded-full bg-sky-500" />
-              )}
             </button>
           );
         })}

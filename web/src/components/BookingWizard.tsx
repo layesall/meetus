@@ -1,3 +1,6 @@
+// components/BookingWizard.tsx
+// Booking flow — wider layout, less empty space, signature clearance.
+
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
@@ -92,34 +95,36 @@ export function BookingWizard({ event }: { event: EventType }) {
     }
   };
 
-    return (
-    <section className="space-y-6">
+  return (
+    // pb-24 : réserve l'espace nécessaire pour SignatureBadge en bas à droite
+    <section className="space-y-6 pb-24">
       <BookingStepper current={step} />
 
       <div key={step} className="step-in">
         {step === 1 && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
-              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:col-span-3">
-                <CalendarPicker selectedDate={date} onSelectDate={setDate} />
-              </div>
-              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:col-span-2">
-                <h3 className="mb-4 text-sm font-medium text-slate-700">
-                  Créneaux disponibles
-                </h3>
-                {slotsError ? (
-                  <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                    {slotsError}
-                  </p>
-                ) : (
-                  <SlotPicker
-                    slots={slots}
-                    selectedSlot={selectedSlot}
-                    onSelectSlot={setSelectedSlot}
-                    loading={loadingSlots}
-                  />
-                )}
-              </div>
+          <div className="space-y-6">
+            {/* Calendar — full width of the main column, no artificial max-w */}
+            <div className="w-full rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:p-8">
+              <CalendarPicker selectedDate={date} onSelectDate={setDate} />
+            </div>
+
+            {/* Slots — full width, more columns on wide screens */}
+            <div className="w-full rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:p-8">
+              <h3 className="mb-4 text-sm font-medium text-slate-700">
+                Créneaux disponibles
+              </h3>
+              {slotsError ? (
+                <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                  {slotsError}
+                </p>
+              ) : (
+                <SlotPicker
+                  slots={slots}
+                  selectedSlot={selectedSlot}
+                  onSelectSlot={setSelectedSlot}
+                  loading={loadingSlots}
+                />
+              )}
             </div>
 
             <div className="flex justify-end pt-2">
@@ -137,17 +142,20 @@ export function BookingWizard({ event }: { event: EventType }) {
         )}
 
         {step === 2 && (
-          <BookingForm
-            event={event}
-            value={client}
-            onChange={setClient}
-            onBack={() => setStep(1)}
-            onNext={() => setStep(3)}
-          />
+          // Form — wider max-w (2xl → 3xl) to reduce empty side space on 22"
+          <div className="mx-auto w-full max-w-3xl">
+            <BookingForm
+              event={event}
+              value={client}
+              onChange={setClient}
+              onBack={() => setStep(1)}
+              onNext={() => setStep(3)}
+            />
+          </div>
         )}
 
         {step === 3 && selectedSlot && (
-          <div className="space-y-4">
+          <div className="mx-auto w-full max-w-3xl space-y-4">
             <BookingSummary event={event} slot={selectedSlot} client={client} />
 
             {submitError && (

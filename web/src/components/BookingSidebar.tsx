@@ -1,5 +1,8 @@
+// components/BookingSidebar.tsx
+// Fixed sidebar content: scrollable middle + pinned badge at bottom.
+
 import Image from "next/image";
-import { ShieldCheck, CalendarDays, Clock, CreditCard } from "lucide-react";
+import { Check, Clock, Calendar, Video, Zap } from "lucide-react";
 import type { EventType } from "@/lib/api";
 
 const HOST = {
@@ -13,82 +16,85 @@ export function BookingSidebar({ event }: { event: EventType }) {
     event.price === 0 ? "Gratuit" : `${event.price} ${event.currency}`;
 
   return (
-    <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full border border-slate-200">
+    <div className="flex flex-col lg:h-full">
+      {/* Scrollable middle */}
+      <div className="flex-1 min-h-0 overflow-y-auto p-6">
+        {/* Host */}
+        <div className="flex items-center gap-4">
+          <div className="relative h-14 w-14 overflow-hidden rounded-full border border-slate-200">
             <Image
               src={HOST.avatarUrl}
               alt={HOST.name}
               fill
-              sizes="78px"
+              sizes="56px"
               className="object-cover object-top"
             />
           </div>
-          <div className="min-w-0">
-            <p className="truncate text-2xl font-semibold text-slate-900">
+          <div>
+            <h1 className="text-lg font-semibold text-slate-900">
               {HOST.name}
-            </p>
-            <p className="truncate text-xs text-slate-500">{HOST.role}</p>
+            </h1>
+            <p className="text-sm text-slate-500">{HOST.role}</p>
           </div>
         </div>
 
-        <div className="mt-5 border-t border-slate-100 pt-4">
-          <span
-            className="mb-2 inline-block h-1 w-10 rounded-full"
-            style={{ backgroundColor: event.color || "#0ea5e9" }}
-          />
-          <h2 className="text-base font-semibold text-slate-900">
-            {event.title}
-          </h2>
-          {event.description && (
-            <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-slate-600">
-              {event.description}
-            </p>
-          )}
-        </div>
+        {/* Event info */}
+        <div className="my-4 border-t border-slate-100" />
+        <span
+          className="mb-3 inline-block h-1.5 w-12 rounded-full"
+          style={{ backgroundColor: event.color || "#0ea5e9" }}
+        />
+        <h2 className="text-base font-semibold text-slate-900">
+          {event.title}
+        </h2>
+        {event.description && (
+          <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-slate-600">
+            {event.description}
+          </p>
+        )}
 
-        <ul className="mt-5 space-y-3 text-sm">
-          <li className="flex items-center gap-2 text-slate-600">
-            <Clock className="h-4 w-4 text-sky-500" />
-            {event.duration_minutes} min
-          </li>
-          <li className="flex items-center gap-2 text-slate-600">
-            <CreditCard className="h-4 w-4 text-sky-500" />
+        <div className="mt-4 space-y-2 text-sm text-slate-600">
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-slate-400" />
+            <span>{event.duration_minutes} min</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-slate-400" />
             <span className="font-medium text-slate-900">{priceLabel}</span>
-          </li>
+          </div>
           {event.allowed_channels.length > 0 && (
-            <li className="flex items-center gap-2 text-slate-600">
-              <CalendarDays className="h-4 w-4 text-sky-500" />
+            <div className="flex items-center gap-2">
+              <Video className="h-4 w-4 text-slate-400" />
               <span className="capitalize">
                 {event.allowed_channels.join(", ").replace(/_/g, " ")}
               </span>
-            </li>
+            </div>
           )}
-        </ul>
+        </div>
 
+        {/* Included features — from API */}
         {event.included_features.length > 0 && (
-          <ul className="mt-5 space-y-2 border-t border-slate-100 pt-4 text-sm text-slate-600">
-            {event.included_features.map((f, i) => (
-              <li key={i} className="flex items-start gap-2">
-                <span className="mt-0.5 text-sky-500">✓</span>
-                <span>{f}</span>
-              </li>
-            ))}
-          </ul>
+          <>
+            <div className="my-4 border-t border-slate-100" />
+            <ul className="space-y-2 text-sm text-slate-600">
+              {event.included_features.map((f, i) => (
+                <li key={i} className="flex items-start gap-2">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                  <span>{f}</span>
+                </li>
+              ))}
+            </ul>
+          </>
         )}
       </div>
 
-      <div className="flex items-center justify-center gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-xs text-slate-500">
-        <span className="inline-flex items-center gap-1.5" hidden>
-          <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
-          Paiement sécurisé
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <CalendarDays className="h-3.5 w-3.5 text-sky-500" />
+      {/* Pinned badge — always at bottom of the sidebar */}
+      <div className="shrink-0 border-t border-slate-100 p-4">
+        <div className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-medium text-slate-600">
+          <Zap className="h-3.5 w-3.5 text-sky-500" />
           Confirmation immédiate
-        </span>
+        </div>
       </div>
-    </aside>
+    </div>
   );
 }

@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Indique à Next.js d'accepter Turbopack
   turbopack: {},
-  allowedDevOrigins: ['192.168.129.12'],
+  allowedDevOrigins: ['127.0.0.1', '192.168.129.12'],
   images: {
     remotePatterns: [
       {
